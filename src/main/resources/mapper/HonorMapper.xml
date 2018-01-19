@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hzvtc.bl.dao.HonorDao">
+    <!-- Honor的resultMap,column是给数据库列起的别名,它对应property类的属性-->
+    <resultMap id="result_Honor_Map" type="com.hzvtc.bl.entity.Honor">
+        <id column="id" property="id" />
+        <result column="honor" property="honor" />
+        <result column="creatdata" property="creatdata" />
+        <result column="sid" property="sid" />
+    </resultMap>
+
+	   <!-- Assist用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+	   <!-- updateAssist用于更新数据的使用它拓展自Assist,用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+    <!-- 数据库中表名为:honor的列名,as前是数据库的列明,as后是列的别名用于映射成实体类中的属性,需要注意的是别名必须与resultMap中的column别名一致 -->
+    <sql id="honor_Column">
+        honor.id as id
+        ,honor.honor as honor
+        ,honor.creatdata as creatdata
+        ,honor.sid as sid
+    </sql>
+
+    <!--获得类名为:Honor对应的数据库表的数据总行数 -->
+    <select id="getHonorRowCount" parameterType="com.hzvtc.bl.common.Assist" resultType="java.lang.Long">
+        select count(id) from honor
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <!-- 获得类名为:Honor对应数据库中表的数据集合 -->
+    <select id="selectHonor" parameterType="com.hzvtc.bl.common.Assist"  resultMap="result_Honor_Map">
+        select  <if test="distinct !=null">${distinct}</if>
+        <choose>
+            <when test="resultColumn!=null">${resultColumn}</when>
+            <otherwise>
+        <include refid="honor_Column" /> 
+            </otherwise>
+        </choose>
+        from honor
+        <choose>
+            <when test="rowSize ==null">
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+            </when>
+            <otherwise>
+                inner join
+                (
+                SELECT id as primary_key FROM honor
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+                <choose>
+                    <when test="startRow !=null and rowSize !=null">LIMIT #{startRow},#{rowSize} </when>
+                    <when test="rowSize !=null">LIMIT #{rowSize}</when>
+                 </choose>
+                 ) as tmp
+                 on tmp.primary_key=honor.id
+            </otherwise>
+        </choose>
+    </select> 
+
+    <!-- 获得一个Honor对象,以参数Honor对象中不为空的属性作为条件进行查询-->
+    <select id="selectHonorByObj" parameterType="com.hzvtc.bl.entity.Honor" resultMap="result_Honor_Map">
+        select 
+            <include refid="honor_Column" /> 
+        from honor
+        <where>
+            <if test="sid != null "> and honor.sid = #{sid}</if>
+            <if test="creatdata != null "> and honor.creatdata = #{creatdata}</if>
+            <if test="honor != null "> and honor.honor = #{honor}</if>
+            <if test="id != null "> and honor.id = #{id}</if>
+        </where>
+    </select> 
+
+    <!-- 通过Honor的id获得对应数据库中表的数据对象-->
+    <select id="selectHonorById" parameterType="java.lang.Integer" resultMap="result_Honor_Map">
+        select 
+            <include refid="honor_Column" /> 
+        from honor
+        where honor.id = #{id}
+    </select> 
+
+    <!-- 将Honor插入到对应数据库的表中,包括属性值为null的数据-->
+
+    <insert id="insertHonor" parameterType="com.hzvtc.bl.entity.Honor">
+        insert into honor(id,honor,creatdata,sid) 
+        values(#{id},#{honor},#{creatdata},#{sid})
+    </insert>
+
+    <!-- 将Honor中属性值不为null的数据,插入到对应数据库的表中-->
+    <insert id="insertNonEmptyHonor" parameterType="com.hzvtc.bl.entity.Honor">
+        insert into honor
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="honor != null">honor,</if>
+            <if test="creatdata != null">creatdata,</if>
+            <if test="sid != null">sid,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null"> #{id},</if>
+            <if test="honor != null"> #{honor},</if>
+            <if test="creatdata != null"> #{creatdata},</if>
+            <if test="sid != null"> #{sid},</if>
+        </trim>
+    </insert>
+
+    <!-- 将Honor批量插入到对应数据库的表中-->
+    <insert id="insertHonorByBatch" parameterType="ArrayList">
+        insert into honor(id,honor,creatdata,sid) values
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.id},#{item.honor},#{item.creatdata},#{item.sid})
+        </foreach>
+    </insert>
+
+    <!-- 通过Honor的id将数据库表中对应的数据删除-->
+    <delete id="deleteHonorById" parameterType="java.lang.Integer">
+        delete from honor
+        where id = #{id}
+    </delete>
+
+    <!-- 通过辅助工具Assist中的条件将Honor对应的数据库表的数据删除-->
+    <delete id="deleteHonor" parameterType="com.hzvtc.bl.common.Assist">
+        delete from honor
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <!-- 通过Honor的id将Honor的数据更新到数据库中对应的表,包括值null的数据-->
+    <update id="updateHonorById" parameterType="com.hzvtc.bl.entity.Honor">
+        update honor set
+            honor=#{honor}
+            ,creatdata=#{creatdata}
+            ,sid=#{sid}
+        where id=#{id}
+    </update>
+
+    <!-- 通过Honor的id将Honor中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyHonorById" parameterType="com.hzvtc.bl.entity.Honor">
+        update honor
+        <set>
+            <if test="honor != null">
+                honor=#{honor},
+            </if>
+            <if test="creatdata != null">
+                creatdata=#{creatdata},
+            </if>
+            <if test="sid != null">
+                sid=#{sid},
+            </if>
+        </set>
+        where id=#{id}
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Honor中的数据更新到数据库对应的表中,包括值为null的数据-->
+    <update id="updateHonor" parameterType="map">
+        update honor
+        <set>
+                id=#{enti.id},
+                honor=#{enti.honor},
+                creatdata=#{enti.creatdata},
+                sid=#{enti.sid},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Honor中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyHonor" parameterType="map">
+        update honor
+        <set>
+            <if test="enti.id != null">
+                id=#{enti.id},
+            </if>
+            <if test="enti.honor != null">
+                honor=#{enti.honor},
+            </if>
+            <if test="enti.creatdata != null">
+                creatdata=#{enti.creatdata},
+            </if>
+            <if test="enti.sid != null">
+                sid=#{enti.sid},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>

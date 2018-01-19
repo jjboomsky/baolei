@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hzvtc.bl.dao.TeacherDao">
+    <!-- Teacher的resultMap,column是给数据库列起的别名,它对应property类的属性-->
+    <resultMap id="result_Teacher_Map" type="com.hzvtc.bl.entity.Teacher">
+        <id column="t_id" property="tId" />
+        <result column="t_idnumber" property="tIdnumber" />
+        <result column="t_password" property="tPassword" />
+        <result column="t_activedcode" property="tActivedcode" />
+        <result column="t_address" property="tAddress" />
+        <result column="t_teacherid" property="tTeacherid" />
+        <result column="t_ifadmin" property="tIfadmin" />
+        <result column="t_name" property="tName" />
+        <result column="t_phone" property="tPhone" />
+        <result column="t_homephone" property="tHomephone" />
+        <result column="t_firsttime" property="tFirsttime" />
+    </resultMap>
+
+    <!-- 数据库中表名为:teacher的列名,as前是数据库的列明,as后是列的别名用于映射成实体类中的属性,需要注意的是别名必须与resultMap中的column别名一致 -->
+    <sql id="teacher_Column">
+        teacher.t_id as t_id
+        ,teacher.t_idnumber as t_idnumber
+        ,teacher.t_password as t_password
+        ,teacher.t_activedcode as t_activedcode
+        ,teacher.t_address as t_address
+        ,teacher.t_teacherid as t_teacherid
+        ,teacher.t_ifadmin as t_ifadmin
+        ,teacher.t_name as t_name
+        ,teacher.t_phone as t_phone
+        ,teacher.t_homephone as t_homephone
+        ,teacher.t_firsttime as t_firsttime
+    </sql>
+
+    <!--获得类名为:Teacher对应的数据库表的数据总行数 -->
+    <select id="getTeacherRowCount" resultType="java.lang.Long">
+        select count(t_id) from teacher
+    </select>
+    <!-- 获得类名为:Teacher对应数据库中表的数据集合 -->
+    <select id="selectTeacher" resultMap="result_Teacher_Map">
+        select 
+        <include refid="teacher_Column" /> 
+        from teacher
+    </select> 
+
+    <!-- 获得一个Teacher对象,以参数Teacher对象中不为空的属性作为条件进行查询-->
+    <select id="selectTeacherByObj" parameterType="com.hzvtc.bl.entity.Teacher" resultMap="result_Teacher_Map">
+        select 
+            <include refid="teacher_Column" /> 
+        from teacher
+        <where>
+            <if test="tFirsttime != null "> and teacher.t_firsttime = #{tFirsttime}</if>
+            <if test="tHomephone != null "> and teacher.t_homephone = #{tHomephone}</if>
+            <if test="tPhone != null "> and teacher.t_phone = #{tPhone}</if>
+            <if test="tName != null "> and teacher.t_name = #{tName}</if>
+            <if test="tIfadmin != null "> and teacher.t_ifadmin = #{tIfadmin}</if>
+            <if test="tTeacherid != null "> and teacher.t_teacherid = #{tTeacherid}</if>
+            <if test="tAddress != null "> and teacher.t_address = #{tAddress}</if>
+            <if test="tActivedcode != null "> and teacher.t_activedcode = #{tActivedcode}</if>
+            <if test="tPassword != null "> and teacher.t_password = #{tPassword}</if>
+            <if test="tIdnumber != null "> and teacher.t_idnumber = #{tIdnumber}</if>
+            <if test="tId != null "> and teacher.t_id = #{tId}</if>
+        </where>
+    </select> 
+
+    <!-- 通过Teacher的id获得对应数据库中表的数据对象-->
+    <select id="selectTeacherById" parameterType="java.lang.Integer" resultMap="result_Teacher_Map">
+        select 
+            <include refid="teacher_Column" /> 
+        from teacher
+        where teacher.t_id = #{id}
+    </select> 
+
+    <!-- 将Teacher插入到对应数据库的表中,包括属性值为null的数据-->
+
+    <insert id="insertTeacher" parameterType="com.hzvtc.bl.entity.Teacher">
+        insert into teacher(t_id,t_idnumber,t_password,t_activedcode,t_address,t_teacherid,t_ifadmin,t_name,t_phone,t_homephone,t_firsttime) 
+        values(#{tId},#{tIdnumber},#{tPassword},#{tActivedcode},#{tAddress},#{tTeacherid},#{tIfadmin},#{tName},#{tPhone},#{tHomephone},#{tFirsttime})
+    </insert>
+
+    <!-- 将Teacher中属性值不为null的数据,插入到对应数据库的表中-->
+    <insert id="insertNonEmptyTeacher" parameterType="com.hzvtc.bl.entity.Teacher">
+        insert into teacher
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="tId != null">t_id,</if>
+            <if test="tIdnumber != null">t_idnumber,</if>
+            <if test="tPassword != null">t_password,</if>
+            <if test="tActivedcode != null">t_activedcode,</if>
+            <if test="tAddress != null">t_address,</if>
+            <if test="tTeacherid != null">t_teacherid,</if>
+            <if test="tIfadmin != null">t_ifadmin,</if>
+            <if test="tName != null">t_name,</if>
+            <if test="tPhone != null">t_phone,</if>
+            <if test="tHomephone != null">t_homephone,</if>
+            <if test="tFirsttime != null">t_firsttime,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="tId != null"> #{tId},</if>
+            <if test="tIdnumber != null"> #{tIdnumber},</if>
+            <if test="tPassword != null"> #{tPassword},</if>
+            <if test="tActivedcode != null"> #{tActivedcode},</if>
+            <if test="tAddress != null"> #{tAddress},</if>
+            <if test="tTeacherid != null"> #{tTeacherid},</if>
+            <if test="tIfadmin != null"> #{tIfadmin},</if>
+            <if test="tName != null"> #{tName},</if>
+            <if test="tPhone != null"> #{tPhone},</if>
+            <if test="tHomephone != null"> #{tHomephone},</if>
+            <if test="tFirsttime != null"> #{tFirsttime},</if>
+        </trim>
+    </insert>
+
+    <!-- 将Teacher批量插入到对应数据库的表中-->
+    <insert id="insertTeacherByBatch" parameterType="ArrayList">
+        insert into teacher(t_id,t_idnumber,t_password,t_activedcode,t_address,t_teacherid,t_ifadmin,t_name,t_phone,t_homephone,t_firsttime) values
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.tId},#{item.tIdnumber},#{item.tPassword},#{item.tActivedcode},#{item.tAddress},#{item.tTeacherid},#{item.tIfadmin},#{item.tName},#{item.tPhone},#{item.tHomephone},#{item.tFirsttime})
+        </foreach>
+    </insert>
+
+    <!-- 通过Teacher的id将数据库表中对应的数据删除-->
+    <delete id="deleteTeacherById" parameterType="java.lang.Integer">
+        delete from teacher
+        where t_id = #{id}
+    </delete>
+
+    <!-- 通过Teacher的id将Teacher的数据更新到数据库中对应的表,包括值null的数据-->
+    <update id="updateTeacherById" parameterType="com.hzvtc.bl.entity.Teacher">
+        update teacher set
+            t_idnumber=#{tIdnumber}
+            ,t_password=#{tPassword}
+            ,t_activedcode=#{tActivedcode}
+            ,t_address=#{tAddress}
+            ,t_teacherid=#{tTeacherid}
+            ,t_ifadmin=#{tIfadmin}
+            ,t_name=#{tName}
+            ,t_phone=#{tPhone}
+            ,t_homephone=#{tHomephone}
+            ,t_firsttime=#{tFirsttime}
+        where t_id=#{tId}
+    </update>
+
+    <!-- 通过Teacher的id将Teacher中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyTeacherById" parameterType="com.hzvtc.bl.entity.Teacher">
+        update teacher
+        <set>
+            <if test="tIdnumber != null">
+                t_idnumber=#{tIdnumber},
+            </if>
+            <if test="tPassword != null">
+                t_password=#{tPassword},
+            </if>
+            <if test="tActivedcode != null">
+                t_activedcode=#{tActivedcode},
+            </if>
+            <if test="tAddress != null">
+                t_address=#{tAddress},
+            </if>
+            <if test="tTeacherid != null">
+                t_teacherid=#{tTeacherid},
+            </if>
+            <if test="tIfadmin != null">
+                t_ifadmin=#{tIfadmin},
+            </if>
+            <if test="tName != null">
+                t_name=#{tName},
+            </if>
+            <if test="tPhone != null">
+                t_phone=#{tPhone},
+            </if>
+            <if test="tHomephone != null">
+                t_homephone=#{tHomephone},
+            </if>
+            <if test="tFirsttime != null">
+                t_firsttime=#{tFirsttime},
+            </if>
+        </set>
+        where t_id=#{tId}
+    </update>
+
+</mapper>

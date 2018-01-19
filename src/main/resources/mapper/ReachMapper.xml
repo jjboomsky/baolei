@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hzvtc.bl.dao.ReachDao">
+    <!-- Reach的resultMap,column是给数据库列起的别名,它对应property类的属性-->
+    <resultMap id="result_Reach_Map" type="com.hzvtc.bl.entity.Reach">
+        <id column="r_id" property="rId" />
+        <result column="r_tid" property="rTid" />
+        <result column="r_sid" property="rSid" />
+        <result column="r_cid" property="rCid" />
+        <result column="r_noreachtime" property="rNoreachtime" />
+        <result column="r_type" property="rType" />
+    </resultMap>
+
+	   <!-- Assist用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+	   <!-- updateAssist用于更新数据的使用它拓展自Assist,用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+    <!-- 数据库中表名为:reach的列名,as前是数据库的列明,as后是列的别名用于映射成实体类中的属性,需要注意的是别名必须与resultMap中的column别名一致 -->
+    <sql id="reach_Column">
+        reach.r_id as r_id
+        ,reach.r_tid as r_tid
+        ,reach.r_sid as r_sid
+        ,reach.r_cid as r_cid
+        ,reach.r_noreachtime as r_noreachtime
+        ,reach.r_type as r_type
+    </sql>
+
+
+    <resultMap id="teacherAndHonor" type="com.hzvtc.bl.entity.StudentReachAndHonor">
+        <id column="r_id" property="rId" />
+        <result column="r_noreachtime" property="rNoreachtime" />
+        <result column="r_type" property="rType" />
+        <collection property="tName"  javaType="String">
+            <result property="tName"  column="t_name"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectStuReachByStuId" resultMap="teacherAndHonor">
+        SELECT  r.r_id as r_id
+       ,r.r_noreachtime as r_noreachtime
+        ,r.r_type as r_type
+        ,t.t_name as t_name
+        FROM reach r LEFT JOIN
+        teacher t
+        ON(r.r_tid=t.t_id)
+        WHERE r.r_sid=#{sid}
+    </select>
+
+    <!--获得类名为:Reach对应的数据库表的数据总行数 -->
+    <select id="getReachRowCount" parameterType="com.hzvtc.bl.common.Assist" resultType="java.lang.Long">
+        select count(r_id) from reach
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <!-- 获得类名为:Reach对应数据库中表的数据集合 -->
+    <select id="selectReach" parameterType="com.hzvtc.bl.common.Assist"  resultMap="result_Reach_Map">
+        select  <if test="distinct !=null">${distinct}</if>
+        <choose>
+            <when test="resultColumn!=null">${resultColumn}</when>
+            <otherwise>
+        <include refid="reach_Column" /> 
+            </otherwise>
+        </choose>
+        from reach
+        <choose>
+            <when test="rowSize ==null">
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+            </when>
+            <otherwise>
+                inner join
+                (
+                SELECT r_id as primary_key FROM reach
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+                <choose>
+                    <when test="startRow !=null and rowSize !=null">LIMIT #{startRow},#{rowSize} </when>
+                    <when test="rowSize !=null">LIMIT #{rowSize}</when>
+                 </choose>
+                 ) as tmp
+                 on tmp.primary_key=reach.r_id
+            </otherwise>
+        </choose>
+    </select> 
+
+    <!-- 获得一个Reach对象,以参数Reach对象中不为空的属性作为条件进行查询-->
+    <select id="selectReachByObj" parameterType="com.hzvtc.bl.entity.Reach" resultMap="result_Reach_Map">
+        select 
+            <include refid="reach_Column" /> 
+        from reach
+        <where>
+            <if test="rType != null "> and reach.r_type = #{rType}</if>
+            <if test="rNoreachtime != null "> and reach.r_noreachtime = #{rNoreachtime}</if>
+            <if test="rCid != null "> and reach.r_cid = #{rCid}</if>
+            <if test="rSid != null "> and reach.r_sid = #{rSid}</if>
+            <if test="rTid != null "> and reach.r_tid = #{rTid}</if>
+            <if test="rId != null "> and reach.r_id = #{rId}</if>
+        </where>
+    </select> 
+
+    <!-- 通过Reach的id获得对应数据库中表的数据对象-->
+    <select id="selectReachById" parameterType="java.lang.Integer" resultMap="result_Reach_Map">
+        select 
+            <include refid="reach_Column" /> 
+        from reach
+        where reach.r_id = #{id}
+    </select> 
+
+    <!-- 将Reach插入到对应数据库的表中,包括属性值为null的数据-->
+
+    <insert id="insertReach" parameterType="com.hzvtc.bl.entity.Reach">
+        insert into reach(r_id,r_tid,r_sid,r_cid,r_noreachtime,r_type) 
+        values(#{rId},#{rTid},#{rSid},#{rCid},#{rNoreachtime},#{rType})
+    </insert>
+
+    <!-- 将Reach中属性值不为null的数据,插入到对应数据库的表中-->
+    <insert id="insertNonEmptyReach" parameterType="com.hzvtc.bl.entity.Reach">
+        insert into reach
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="rId != null">r_id,</if>
+            <if test="rTid != null">r_tid,</if>
+            <if test="rSid != null">r_sid,</if>
+            <if test="rCid != null">r_cid,</if>
+            <if test="rNoreachtime != null">r_noreachtime,</if>
+            <if test="rType != null">r_type,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="rId != null"> #{rId},</if>
+            <if test="rTid != null"> #{rTid},</if>
+            <if test="rSid != null"> #{rSid},</if>
+            <if test="rCid != null"> #{rCid},</if>
+            <if test="rNoreachtime != null"> #{rNoreachtime},</if>
+            <if test="rType != null"> #{rType},</if>
+        </trim>
+    </insert>
+
+    <!-- 将Reach批量插入到对应数据库的表中-->
+    <insert id="insertReachByBatch" parameterType="ArrayList">
+        insert into reach(r_id,r_tid,r_sid,r_cid,r_noreachtime,r_type) values
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.rId},#{item.rTid},#{item.rSid},#{item.rCid},#{item.rNoreachtime},#{item.rType})
+        </foreach>
+    </insert>
+
+    <!-- 通过Reach的id将数据库表中对应的数据删除-->
+    <delete id="deleteReachById" parameterType="java.lang.Integer">
+        delete from reach
+        where r_id = #{id}
+    </delete>
+
+    <!-- 通过辅助工具Assist中的条件将Reach对应的数据库表的数据删除-->
+    <delete id="deleteReach" parameterType="com.hzvtc.bl.common.Assist">
+        delete from reach
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <!-- 通过Reach的id将Reach的数据更新到数据库中对应的表,包括值null的数据-->
+    <update id="updateReachById" parameterType="com.hzvtc.bl.entity.Reach">
+        update reach set
+            r_tid=#{rTid}
+            ,r_sid=#{rSid}
+            ,r_cid=#{rCid}
+            ,r_noreachtime=#{rNoreachtime}
+            ,r_type=#{rType}
+        where r_id=#{rId}
+    </update>
+
+    <!-- 通过Reach的id将Reach中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyReachById" parameterType="com.hzvtc.bl.entity.Reach">
+        update reach
+        <set>
+            <if test="rTid != null">
+                r_tid=#{rTid},
+            </if>
+            <if test="rSid != null">
+                r_sid=#{rSid},
+            </if>
+            <if test="rCid != null">
+                r_cid=#{rCid},
+            </if>
+            <if test="rNoreachtime != null">
+                r_noreachtime=#{rNoreachtime},
+            </if>
+            <if test="rType != null">
+                r_type=#{rType},
+            </if>
+        </set>
+        where r_id=#{rId}
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Reach中的数据更新到数据库对应的表中,包括值为null的数据-->
+    <update id="updateReach" parameterType="map">
+        update reach
+        <set>
+                r_id=#{enti.rId},
+                r_tid=#{enti.rTid},
+                r_sid=#{enti.rSid},
+                r_cid=#{enti.rCid},
+                r_noreachtime=#{enti.rNoreachtime},
+                r_type=#{enti.rType},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Reach中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyReach" parameterType="map">
+        update reach
+        <set>
+            <if test="enti.rId != null">
+                r_id=#{enti.rId},
+            </if>
+            <if test="enti.rTid != null">
+                r_tid=#{enti.rTid},
+            </if>
+            <if test="enti.rSid != null">
+                r_sid=#{enti.rSid},
+            </if>
+            <if test="enti.rCid != null">
+                r_cid=#{enti.rCid},
+            </if>
+            <if test="enti.rNoreachtime != null">
+                r_noreachtime=#{enti.rNoreachtime},
+            </if>
+            <if test="enti.rType != null">
+                r_type=#{enti.rType},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>

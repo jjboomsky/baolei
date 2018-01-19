@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>登入页面</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+
+<body>
+<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+<link rel='stylesheet prefetch' href='https://fonts.googleapis.com/icon?family=Material+Icons'>
+<body>
+<div class="cotn_principal">
+    <div class="cont_centrar">
+        <div class="cont_login">
+            <div class="cont_info_log_sign_up">
+                <div class="col_md_login">
+                    <div class="cont_ba_opcitiy">
+                        <h2>学生登入</h2>
+                        <p>学生登入点击</p>
+                        <button class="btn_login" onclick="student_onclick()">LOGIN</button>
+                    </div>
+                </div>
+                <div class="col_md_sign_up">
+                    <div class="cont_ba_opcitiy">
+                        <h2>教师登入</h2>
+                        <p>教师登入点击</p>
+                        <button class="btn_sign_up" onclick="teacher_onclick()">LOGIN</button>
+                    </div>
+                </div>
+            </div>
+            <div class="cont_back_info">
+                <div class="cont_img_back_grey"><img src="static/images/po.jpg" alt=""/></div>
+            </div>
+            <div class="cont_forms">
+                <div class="cont_img_back_"><img src="static/images/po.jpg" alt=""/></div>
+                <form action="/login/stu_login.do" method="post">
+                    <div class="cont_form_login"><a href="#" onclick="ocultar_login_sign_up()"><i
+                            class="material-icons">&#xE5C4;</i></a>
+                        <!--this.form.submit()-->
+                        <h2>学生登入</h2>
+                        <input name="username" id="stu_username" type="text" placeholder="学号"/>
+                        <input name="password" id="stu_password" type="password" placeholder="密码"/>
+                        <button class="btn_login" onClick="this.form.submit()">LOGIN</button>
+                    </div>
+                </form>
+                <form action="/login/tea_login.do" method="post">
+                    <div class="cont_form_sign_up"><a href="#" onclick="ocultar_login_sign_up()"><i
+                            class="material-icons">&#xE5C4;</i></a>
+                        <h2>教师登入</h2>
+                        <input name="username" id="ter_username" type="text" placeholder="教师号"/>
+                        <input name="password" id="ter_password" type="password" placeholder="密码"/>
+                        <button class="btn_sign_up" onClick="this.form.submit()" >LOGIN</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="static/js/jquery.js"></script>
+<script src="static/js/index.js"></script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var msg=$.cookie('msg');
+        if(null==msg){
+            alert(msg);
+        }
+    });
+
+</script>
+
+</body>
+
+</body>
+</html>

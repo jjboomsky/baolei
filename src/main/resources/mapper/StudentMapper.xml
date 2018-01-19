@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hzvtc.bl.dao.StudentDao">
+    <!-- Student的resultMap,column是给数据库列起的别名,它对应property类的属性-->
+    <resultMap id="result_Student_Map" type="com.hzvtc.bl.entity.Student">
+        <id column="s_id" property="sId" />
+        <result column="s_schoolid" property="sSchoolid" />
+        <result column="s_activedcode" property="sActivedcode" />
+        <result column="s_class" property="sClass" />
+        <result column="s_phone" property="sPhone" />
+        <result column="s_firsttime" property="sFirsttime" />
+        <result column="s_password" property="sPassword" />
+        <result column="s_homephone" property="sHomephone" />
+        <result column="s_address" property="sAddress" />
+        <result column="s_bedroom" property="sBedroom" />
+        <result column="s_studyid" property="sStudyid" />
+        <result column="s_idnumber" property="sIdnumber" />
+        <result column="s_sex" property="sSex" />
+        <result column="s_name" property="sName" />
+    </resultMap>
+
+	   <!-- Assist用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+	   <!-- updateAssist用于更新数据的使用它拓展自Assist,用于辅助工具类setRequires设置的条件,${req.require}表示列名,#{req.value}表示值它是防SQL注入的 -->
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value} <if test="req.suffix != null"> ${req.suffix}</if>
+            </foreach>
+        </where>
+    </sql>
+
+    <!-- 数据库中表名为:student的列名,as前是数据库的列明,as后是列的别名用于映射成实体类中的属性,需要注意的是别名必须与resultMap中的column别名一致 -->
+    <sql id="student_Column">
+        student.s_id as s_id
+        ,student.s_schoolid as s_schoolid
+        ,student.s_activedcode as s_activedcode
+        ,student.s_class as s_class
+        ,student.s_phone as s_phone
+        ,student.s_firsttime as s_firsttime
+        ,student.s_password as s_password
+        ,student.s_homephone as s_homephone
+        ,student.s_address as s_address
+        ,student.s_bedroom as s_bedroom
+        ,student.s_studyid as s_studyid
+        ,student.s_idnumber as s_idnumber
+        ,student.s_sex as s_sex
+        ,student.s_name as s_name
+    </sql>
+
+
+    <!--学生荣誉查询-->
+
+    <resultMap id="studentHonorAndFalut" type="com.hzvtc.bl.entity.StudentHonorAndFalut">
+        <id column="s_id" property="sId" />
+        <result column="s_name" property="sName" />
+        <result column="s_sex" property="sSex" />
+        <result column="s_schoolid" property="sSchoolid" />
+        <collection property="honor"  javaType="String">
+            <result property="honor"  column="honor"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectStudentHonor" resultMap="studentHonorAndFalut">
+        SELECT  s.s_id as s_id
+        ,s.s_name as s_name
+        ,s.s_sex as s_sex
+        ,s.s_schoolid as s_schoolid
+        ,h.honor as honor
+        FROM student s LEFT JOIN
+        honor h
+        ON(s.s_id=h.sid)
+    </select>
+
+
+
+    <!--获得类名为:Student对应的数据库表的数据总行数 -->
+    <select id="getStudentRowCount" parameterType="com.hzvtc.bl.common.Assist" resultType="java.lang.Long">
+        select count(s_id) from student
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <!-- 获得类名为:Student对应数据库中表的数据集合 -->
+    <select id="selectStudent" parameterType="com.hzvtc.bl.common.Assist"  resultMap="result_Student_Map">
+        select  <if test="distinct !=null">${distinct}</if>
+        <choose>
+            <when test="resultColumn!=null">${resultColumn}</when>
+            <otherwise>
+        <include refid="student_Column" /> 
+            </otherwise>
+        </choose>
+        from student
+        <choose>
+            <when test="rowSize ==null">
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+            </when>
+            <otherwise>
+                inner join
+                (
+                SELECT s_id as primary_key FROM student
+                <if test="require!=null">
+                    <include refid="Assist" />
+                </if>
+                <if test="order !=null">${order}</if>
+                <choose>
+                    <when test="startRow !=null and rowSize !=null">LIMIT #{startRow},#{rowSize} </when>
+                    <when test="rowSize !=null">LIMIT #{rowSize}</when>
+                 </choose>
+                 ) as tmp
+                 on tmp.primary_key=student.s_id
+            </otherwise>
+        </choose>
+    </select> 
+
+    <!-- 获得一个Student对象,以参数Student对象中不为空的属性作为条件进行查询-->
+    <select id="selectStudentByObj" parameterType="com.hzvtc.bl.entity.Student" resultMap="result_Student_Map">
+        select 
+            <include refid="student_Column" /> 
+        from student
+        <where>
+            <if test="sName != null "> and student.s_name = #{sName}</if>
+            <if test="sSex != null "> and student.s_sex = #{sSex}</if>
+            <if test="sIdnumber != null "> and student.s_idnumber = #{sIdnumber}</if>
+            <if test="sStudyid != null "> and student.s_studyid = #{sStudyid}</if>
+            <if test="sBedroom != null "> and student.s_bedroom = #{sBedroom}</if>
+            <if test="sAddress != null "> and student.s_address = #{sAddress}</if>
+            <if test="sHomephone != null "> and student.s_homephone = #{sHomephone}</if>
+            <if test="sPassword != null "> and student.s_password = #{sPassword}</if>
+            <if test="sFirsttime != null "> and student.s_firsttime = #{sFirsttime}</if>
+            <if test="sPhone != null "> and student.s_phone = #{sPhone}</if>
+            <if test="sClass != null "> and student.s_class = #{sClass}</if>
+            <if test="sActivedcode != null "> and student.s_activedcode = #{sActivedcode}</if>
+            <if test="sSchoolid != null "> and student.s_schoolid = #{sSchoolid}</if>
+            <if test="sId != null "> and student.s_id = #{sId}</if>
+        </where>
+    </select> 
+
+    <!-- 通过Student的id获得对应数据库中表的数据对象-->
+    <select id="selectStudentById" parameterType="java.lang.Integer" resultMap="result_Student_Map">
+        select 
+            <include refid="student_Column" /> 
+        from student
+        where student.s_id = #{id}
+    </select> 
+
+    <!-- 将Student插入到对应数据库的表中,包括属性值为null的数据-->
+
+    <insert id="insertStudent" parameterType="com.hzvtc.bl.entity.Student">
+        insert into student(s_id,s_schoolid,s_activedcode,s_class,s_phone,s_firsttime,s_password,s_homephone,s_address,s_bedroom,s_studyid,s_idnumber,s_sex,s_name) 
+        values(#{sId},#{sSchoolid},#{sActivedcode},#{sClass},#{sPhone},#{sFirsttime},#{sPassword},#{sHomephone},#{sAddress},#{sBedroom},#{sStudyid},#{sIdnumber},#{sSex},#{sName})
+    </insert>
+
+    <!-- 将Student中属性值不为null的数据,插入到对应数据库的表中-->
+    <insert id="insertNonEmptyStudent" parameterType="com.hzvtc.bl.entity.Student">
+        insert into student
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sId != null">s_id,</if>
+            <if test="sSchoolid != null">s_schoolid,</if>
+            <if test="sActivedcode != null">s_activedcode,</if>
+            <if test="sClass != null">s_class,</if>
+            <if test="sPhone != null">s_phone,</if>
+            <if test="sFirsttime != null">s_firsttime,</if>
+            <if test="sPassword != null">s_password,</if>
+            <if test="sHomephone != null">s_homephone,</if>
+            <if test="sAddress != null">s_address,</if>
+            <if test="sBedroom != null">s_bedroom,</if>
+            <if test="sStudyid != null">s_studyid,</if>
+            <if test="sIdnumber != null">s_idnumber,</if>
+            <if test="sSex != null">s_sex,</if>
+            <if test="sName != null">s_name,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sId != null"> #{sId},</if>
+            <if test="sSchoolid != null"> #{sSchoolid},</if>
+            <if test="sActivedcode != null"> #{sActivedcode},</if>
+            <if test="sClass != null"> #{sClass},</if>
+            <if test="sPhone != null"> #{sPhone},</if>
+            <if test="sFirsttime != null"> #{sFirsttime},</if>
+            <if test="sPassword != null"> #{sPassword},</if>
+            <if test="sHomephone != null"> #{sHomephone},</if>
+            <if test="sAddress != null"> #{sAddress},</if>
+            <if test="sBedroom != null"> #{sBedroom},</if>
+            <if test="sStudyid != null"> #{sStudyid},</if>
+            <if test="sIdnumber != null"> #{sIdnumber},</if>
+            <if test="sSex != null"> #{sSex},</if>
+            <if test="sName != null"> #{sName},</if>
+        </trim>
+    </insert>
+
+    <!-- 将Student批量插入到对应数据库的表中-->
+    <insert id="insertStudentByBatch" parameterType="ArrayList">
+        insert into student(s_id,s_schoolid,s_activedcode,s_class,s_phone,s_firsttime,s_password,s_homephone,s_address,s_bedroom,s_studyid,s_idnumber,s_sex,s_name) values
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.sId},#{item.sSchoolid},#{item.sActivedcode},#{item.sClass},#{item.sPhone},#{item.sFirsttime},#{item.sPassword},#{item.sHomephone},#{item.sAddress},#{item.sBedroom},#{item.sStudyid},#{item.sIdnumber},#{item.sSex},#{item.sName})
+        </foreach>
+    </insert>
+
+    <!-- 通过Student的id将数据库表中对应的数据删除-->
+    <delete id="deleteStudentById" parameterType="java.lang.Integer">
+        delete from student
+        where s_id = #{id}
+    </delete>
+
+    <delete id="deleteStudentByBatch">
+        delete from student where s_id in
+        <foreach collection="array" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 通过辅助工具Assist中的条件将Student对应的数据库表的数据删除-->
+    <delete id="deleteStudent" parameterType="com.hzvtc.bl.common.Assist">
+        delete from student
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <!-- 通过Student的id将Student的数据更新到数据库中对应的表,包括值null的数据-->
+    <update id="updateStudentById" parameterType="com.hzvtc.bl.entity.Student">
+        update student set
+            s_schoolid=#{sSchoolid}
+            ,s_activedcode=#{sActivedcode}
+            ,s_class=#{sClass}
+            ,s_phone=#{sPhone}
+            ,s_firsttime=#{sFirsttime}
+            ,s_password=#{sPassword}
+            ,s_homephone=#{sHomephone}
+            ,s_address=#{sAddress}
+            ,s_bedroom=#{sBedroom}
+            ,s_studyid=#{sStudyid}
+            ,s_idnumber=#{sIdnumber}
+            ,s_sex=#{sSex}
+            ,s_name=#{sName}
+        where s_id=#{sId}
+    </update>
+
+    <!-- 通过Student的id将Student中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyStudentById" parameterType="com.hzvtc.bl.entity.Student">
+        update student
+        <set>
+            <if test="sSchoolid != null">
+                s_schoolid=#{sSchoolid},
+            </if>
+            <if test="sActivedcode != null">
+                s_activedcode=#{sActivedcode},
+            </if>
+            <if test="sClass != null">
+                s_class=#{sClass},
+            </if>
+            <if test="sPhone != null">
+                s_phone=#{sPhone},
+            </if>
+            <if test="sFirsttime != null">
+                s_firsttime=#{sFirsttime},
+            </if>
+            <if test="sPassword != null">
+                s_password=#{sPassword},
+            </if>
+            <if test="sHomephone != null">
+                s_homephone=#{sHomephone},
+            </if>
+            <if test="sAddress != null">
+                s_address=#{sAddress},
+            </if>
+            <if test="sBedroom != null">
+                s_bedroom=#{sBedroom},
+            </if>
+            <if test="sStudyid != null">
+                s_studyid=#{sStudyid},
+            </if>
+            <if test="sIdnumber != null">
+                s_idnumber=#{sIdnumber},
+            </if>
+            <if test="sSex != null">
+                s_sex=#{sSex},
+            </if>
+            <if test="sName != null">
+                s_name=#{sName},
+            </if>
+        </set>
+        where s_id=#{sId}
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Student中的数据更新到数据库对应的表中,包括值为null的数据-->
+    <update id="updateStudent" parameterType="map">
+        update student
+        <set>
+                s_id=#{enti.sId},
+                s_schoolid=#{enti.sSchoolid},
+                s_activedcode=#{enti.sActivedcode},
+                s_class=#{enti.sClass},
+                s_phone=#{enti.sPhone},
+                s_firsttime=#{enti.sFirsttime},
+                s_password=#{enti.sPassword},
+                s_homephone=#{enti.sHomephone},
+                s_address=#{enti.sAddress},
+                s_bedroom=#{enti.sBedroom},
+                s_studyid=#{enti.sStudyid},
+                s_idnumber=#{enti.sIdnumber},
+                s_sex=#{enti.sSex},
+                s_name=#{enti.sName},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <!-- 通过辅助工具Assist中的条件将Student中属性值不为null的数据更新到数据库对应的表中-->
+    <update id="updateNonEmptyStudent" parameterType="map">
+        update student
+        <set>
+            <if test="enti.sId != null">
+                s_id=#{enti.sId},
+            </if>
+            <if test="enti.sSchoolid != null">
+                s_schoolid=#{enti.sSchoolid},
+            </if>
+            <if test="enti.sActivedcode != null">
+                s_activedcode=#{enti.sActivedcode},
+            </if>
+            <if test="enti.sClass != null">
+                s_class=#{enti.sClass},
+            </if>
+            <if test="enti.sPhone != null">
+                s_phone=#{enti.sPhone},
+            </if>
+            <if test="enti.sFirsttime != null">
+                s_firsttime=#{enti.sFirsttime},
+            </if>
+            <if test="enti.sPassword != null">
+                s_password=#{enti.sPassword},
+            </if>
+            <if test="enti.sHomephone != null">
+                s_homephone=#{enti.sHomephone},
+            </if>
+            <if test="enti.sAddress != null">
+                s_address=#{enti.sAddress},
+            </if>
+            <if test="enti.sBedroom != null">
+                s_bedroom=#{enti.sBedroom},
+            </if>
+            <if test="enti.sStudyid != null">
+                s_studyid=#{enti.sStudyid},
+            </if>
+            <if test="enti.sIdnumber != null">
+                s_idnumber=#{enti.sIdnumber},
+            </if>
+            <if test="enti.sSex != null">
+                s_sex=#{enti.sSex},
+            </if>
+            <if test="enti.sName != null">
+                s_name=#{enti.sName},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <select id="selectStudentMax"  parameterType="com.hzvtc.bl.entity.Student" resultType="java.lang.Integer" >
+      select max(s_schoolid) from student
+        where s_class= #{sClass} AND s_firsttime=#{sFirsttime}
+    </select>
+
+
+    <select id="getStudentCount"  parameterType="com.hzvtc.bl.entity.Student" resultType="java.lang.Integer" >
+        select count(s_id) from student
+        where s_class= #{sClass} AND s_firsttime=#{sFirsttime}
+    </select>
+
+</mapper>
